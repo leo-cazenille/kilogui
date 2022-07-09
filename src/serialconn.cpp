@@ -224,8 +224,18 @@ void SerialConnection::programLoop() {
             packet[0] = PACKET_HEADER;
             packet[1] = PACKET_FORWARDMSG;
             packet[2] = page_total;
+
+            // Checksum of entire program
+            uint8_t checksum = 0;
+            uint8_t data_byte;
+            for (size_t i=0; i<data.size(); i++) {
+                data_byte = data.get(i);
+                checksum ^= data_byte;
+            }
+            packet[3] = checksum;
+
             packet[11] = BOOTPGM_SIZE;
-            packet[PACKET_SIZE-1] = PACKET_HEADER^PACKET_FORWARDMSG^page_total^BOOTPGM_SIZE;
+            packet[PACKET_SIZE-1] = PACKET_HEADER^PACKET_FORWARDMSG^page_total^checksum^BOOTPGM_SIZE;
 #ifdef _WIN32
             if (!WriteFile(*((HANDLE*)context), packet, PACKET_SIZE, &bytes_sent, 0) || bytes_sent != PACKET_SIZE) {
                 mode = MODE_NORMAL;
